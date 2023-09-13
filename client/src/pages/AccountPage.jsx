@@ -13,15 +13,16 @@ export default function AccountPage() {
 
     async function logout() {
         await axios.post('/logout');
-        setUser(null);
         setRedirect('/');
+        setUser(null);
     }
 
     if (!ready) {
         return 'Loading...';
     }
 
-    if (ready && !user) {
+    // TODO:
+    if (ready && !user /*&& !redirect*/) {
         return <Navigate to={'/login'} />;
     }
 
