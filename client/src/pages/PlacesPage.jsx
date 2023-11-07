@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { useState } from 'react';
 import Perks from '../Perks';
+import axios from 'axios';
 
 export default function PlacesPage() {
     const { action } = useParams();
@@ -30,6 +31,35 @@ export default function PlacesPage() {
                 {inputDescription(description)}
             </>
         );
+    }
+
+    async function addPhotoByLink(ev) {
+        ev.preventDefault();
+        const { data: filename } = await axios.post('/upload-by-link', {
+            link: photoLink,
+        });
+        setAddedPhotos((prev) => {
+            return [...prev, filename];
+        });
+        setPhotoLink('');
+    }
+
+    function uploadPhoto(ev) {
+        const files = ev.target.files;
+        const data = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            data.append('photos', files[i]);
+        }
+        axios
+            .post('/upload', data, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            })
+            .then((response) => {
+                const { data: filenames } = response;
+                setAddedPhotos((prev) => {
+                    return [...prev, ...filenames];
+                });
+            });
     }
 
     return (
@@ -62,22 +92,52 @@ export default function PlacesPage() {
                         {preInput('Title', 'Title for your place')}
                         <input
                             type="text"
+                            value={title}
+                            onChange={(ev) => setTitle(ev.target.value)}
                             placeholder="title, for example: My apartment"
                         />
                         {preInput('Address', 'Address for your place')}
-                        <input type="text" placeholder="address" />
+                        <input
+                            type="text"
+                            value={address}
+                            onChange={(ev) => setAddress(ev.target.value)}
+                            placeholder="address"
+                        />
                         {preInput('Photos', 'Your photos')}
                         <div className="flex gap-2">
                             <input
                                 type="text"
+                                value={photoLink}
+                                onChange={(ev) => setPhotoLink(ev.target.value)}
                                 placeholder={'Add using a link'}
                             />
-                            <button className="bg-gray-200 px-4 rounded-2xl">
+                            <button
+                                className="bg-gray-200 px-4 rounded-2xl"
+                                onClick={addPhotoByLink}>
                                 Add photo
                             </button>
                         </div>
-                        <div className="grid grid-cols-3 lg:grid-cols-6 md:grid-cols-4 mt-2">
-                            <button className=" flex justify-center gap-1 border bg-transparent rounded-2xl p-8 text-2xl text-gray-600">
+                        <div className="grid grid-cols-3 lg:grid-cols-6 md:grid-cols-4 mt-2 gap-2">
+                            {addedPhotos.length > 0 &&
+                                addedPhotos.map((link) => (
+                                    <div className="h-30 flex" key={link}>
+                                        <img
+                                            className="rounded-2xl w-full object-cover"
+                                            src={
+                                                'http://localhost:4000/uploads/' +
+                                                link
+                                            }
+                                            alt="Must be a photo"
+                                        />
+                                    </div>
+                                ))}
+                            <label className="flex items-center justify-center gap-1 border bg-transparent rounded-2xl p-2 text-2xl text-gray-600 cursor-pointer h-30">
+                                <input
+                                    type="file"
+                                    multiple={true}
+                                    className="hidden"
+                                    onChange={uploadPhoto}
+                                />
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
                                     fill="none"
@@ -92,18 +152,24 @@ export default function PlacesPage() {
                                     />
                                 </svg>
                                 Upload
-                            </button>
+                            </label>
                         </div>
                         {preInput('Description', 'Description of your place')}
-                        <textarea />
+                        <textarea
+                            value={description}
+                            onChange={(ev) => setDescription(ev.target.value)}
+                        />
                         {preInput('Perks', ' Select all perks of place')}
                         <div className="grid gap-2 mt-2 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-                            <Perks />
+                            <Perks selected={perks} onChange={setPerks} />
                         </div>
                         {preInput('Extra information', 'Rules')}
                         {/* <h2 className="text-2xl mt-4">Extra information</h2>
                         <p className="text-gray-500 text-sm">Rules</p> */}
-                        <textarea />
+                        <textarea
+                            value={extraInfo}
+                            onChange={(ev) => setExtraInfo(ev.target.value)}
+                        />
                         {preInput(
                             'Check in/out time, max guests',
                             'add check in and out time'
@@ -117,17 +183,38 @@ export default function PlacesPage() {
                         <div className="grid sm:grid-cols-3 gap-2">
                             <div>
                                 <h3 className="mt-2 -mb-1">Check in time</h3>
-                                <input type="text" placeholder="12:00" />
+                                <input
+                                    type="text"
+                                    value={checkIn}
+                                    onChange={(ev) =>
+                                        setCheckIn(ev.target.value)
+                                    }
+                                    placeholder="12:00"
+                                />
                             </div>
                             <div>
                                 <h3 className="mt-2 -mb-1">Check out time</h3>
-                                <input type="text" />
+                                <input
+                                    type="text"
+                                    value={checkOut}
+                                    onChange={(ev) =>
+                                        setCheckOut(ev.target.value)
+                                    }
+                                    placeholder="12:00"
+                                />
                             </div>
                             <div>
                                 <h3 className="mt-2 -mb-1">
                                     Max number of guests
                                 </h3>
-                                <input type="text" />
+                                <input
+                                    type="number"
+                                    value={maxGuests}
+                                    onChange={(ev) =>
+                                        setMaxGuests(ev.target.value)
+                                    }
+                                    placeholder="8"
+                                />
                             </div>
                         </div>
                         <button className="primary my-4">Save</button>
